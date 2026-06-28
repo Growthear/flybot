@@ -1,5 +1,8 @@
+import os
 from curl_cffi import requests as cf_requests
 from config import FLYBONDI_URL, FLYBONDI_AUTH, CURRENCY
+
+PROXY = os.environ.get("PROXY_URL")  # None cuando corre local sin proxy
 
 GRAPHQL_QUERY = """
 query DatesContainerQuery(
@@ -53,13 +56,11 @@ def fetch_flights(route: dict) -> list[dict]:
     }
 
     # curl_cffi imita el fingerprint TLS de Chrome — pasa Cloudflare sin browser real
-    response = cf_requests.post(
-        FLYBONDI_URL,
-        json=payload,
-        headers=headers,
-        impersonate="chrome131",
-        timeout=30,
-    )
+    kwargs = dict(json=payload, headers=headers, impersonate="chrome131", timeout=30)
+    if PROXY:
+        kwargs["proxies"] = {"https": PROXY, "http": PROXY}
+
+    response = cf_requests.post(FLYBONDI_URL, **kwargs)
 
     if not response.ok:
         raise RuntimeError(f"API respondio {response.status_code}: {response.text[:300]}")

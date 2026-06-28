@@ -1,7 +1,28 @@
 import sqlite3
+import os
 from datetime import datetime, date
 
-DB_PATH = "prices.db"
+DB_PATH = "/tmp/prices.db"
+S3_BUCKET = os.environ.get("S3_BUCKET", "flybot-db-augusto")
+S3_KEY = "prices.db"
+
+
+def download_db():
+    try:
+        import boto3
+        boto3.client("s3").download_file(S3_BUCKET, S3_KEY, DB_PATH)
+        print(f"[db] descargado desde s3://{S3_BUCKET}/{S3_KEY}")
+    except Exception as e:
+        print(f"[db] no habia DB en S3, arranco nueva: {e}")
+
+
+def upload_db():
+    try:
+        import boto3
+        boto3.client("s3").upload_file(DB_PATH, S3_BUCKET, S3_KEY)
+        print(f"[db] subido a s3://{S3_BUCKET}/{S3_KEY}")
+    except Exception as e:
+        print(f"[db] error subiendo DB a S3: {e}")
 
 
 def init_db():
