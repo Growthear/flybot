@@ -71,41 +71,30 @@ def _msg_combo(ida_flight: dict, vuelta_flight: dict) -> str:
     )
 
 
-def _msg_ida_standalone(ida_flight: dict, best_vuelta: dict | None) -> str:
+def _msg_ida_standalone(ida_flight: dict) -> str:
     ida_p = ida_flight["lowestPrice"]
+    saldo = VOUCHER_ARS - ida_p
     lines = [
         f"VUELO DE IDA MUY BARATO!\n",
-        f"IDA: {_fmt_date(ida_flight['departure'])}  -->  {_fmt_price(ida_p)} ARS",
+        f"IDA: {_fmt_date(ida_flight['departure'])}  -->  {_fmt_price(ida_p)} ARS\n",
+        f"Voucher: -{_fmt_price(VOUCHER_ARS)} ARS",
+        f"Saldo a favor: {_fmt_price(saldo)} ARS" if saldo > 0 else f"Pagas: {_fmt_price(-saldo)} ARS de tu bolsillo",
+        f"\nVer IDA: {LINK_IDA}",
     ]
-    if best_vuelta:
-        vuelta_p = best_vuelta["lowestPrice"]
-        total = ida_p + vuelta_p
-        bolsillo = max(0, total - VOUCHER_ARS)
-        lines.append(f"\nMejor vuelta disponible (~2 meses despues):")
-        lines.append(f"VUELTA: {_fmt_date(best_vuelta['departure'])}  -->  {_fmt_price(vuelta_p)} ARS")
-        lines.append(f"\nTOTAL:   {_fmt_price(total)} ARS")
-        lines.append(f"Voucher: -{_fmt_price(VOUCHER_ARS)} ARS")
-        lines.append(f"Pagas:   {_fmt_price(bolsillo)} ARS de tu bolsillo")
-    lines.append(f"\nVer IDA: {LINK_IDA}")
     return "\n".join(lines)
 
 
-def _msg_vuelta_standalone(vuelta_flight: dict, best_ida: dict | None) -> str:
+def _msg_vuelta_standalone(vuelta_flight: dict) -> str:
     vuelta_p = vuelta_flight["lowestPrice"]
+    saldo = VOUCHER_ARS - vuelta_p
     lines = [
         f"VUELO DE VUELTA MUY BARATO!\n",
-        f"VUELTA: {_fmt_date(vuelta_flight['departure'])}  -->  {_fmt_price(vuelta_p)} ARS",
+        f"VUELTA: {_fmt_date(vuelta_flight['departure'])}  -->  {_fmt_price(vuelta_p)} ARS\n",
+        f"Voucher: -{_fmt_price(VOUCHER_ARS)} ARS",
+        f"Saldo a favor: {_fmt_price(saldo)} ARS" if saldo > 0 else f"Pagas: {_fmt_price(-saldo)} ARS de tu bolsillo",
+        f"\nVer vuelta: {LINK_VUELTA}",
     ]
-    if best_ida:
-        ida_p = best_ida["lowestPrice"]
-        total = ida_p + vuelta_p
-        bolsillo = max(0, total - VOUCHER_ARS)
-        lines.append(f"\nMejor ida disponible (~2 meses antes):")
-        lines.append(f"IDA: {_fmt_date(best_ida['departure'])}  -->  {_fmt_price(ida_p)} ARS")
-        lines.append(f"\nTOTAL:   {_fmt_price(total)} ARS")
-        lines.append(f"Voucher: -{_fmt_price(VOUCHER_ARS)} ARS")
-        lines.append(f"Pagas:   {_fmt_price(bolsillo)} ARS de tu bolsillo")
-    lines.append(f"\nVer vuelta: {LINK_VUELTA}")
+    return "\n".join(lines)
     return "\n".join(lines)
 
 
@@ -146,8 +135,7 @@ def process_all_flights(ida_flights: list[dict], vuelta_flights: list[dict], *_)
         if sent_ida >= TOP_N_ALERTS:
             break
         key = f"IDA_CHEAP:{flight['departure'][:10]}"
-        companion = _find_best_companion(vuelta_flights, flight["departure"], anchor_is_ida=True)
-        if _alert(key, _msg_ida_standalone(flight, companion), f"IDA SUELTA {flight['departure'][:10]} -> {_fmt_price(flight['lowestPrice'])}"):
+        if _alert(key, _msg_ida_standalone(flight), f"IDA SUELTA {flight['departure'][:10]} -> {_fmt_price(flight['lowestPrice'])}"):
             sent_ida += 1
 
     # --- 3. VUELTA SUELTA: RIO->BUE bajo $92k ---
@@ -160,8 +148,7 @@ def process_all_flights(ida_flights: list[dict], vuelta_flights: list[dict], *_)
         if sent_vuelta >= TOP_N_ALERTS:
             break
         key = f"VUELTA_CHEAP:{flight['departure'][:10]}"
-        companion = _find_best_companion(ida_flights, flight["departure"], anchor_is_ida=False)
-        if _alert(key, _msg_vuelta_standalone(flight, companion), f"VUELTA SUELTA {flight['departure'][:10]} -> {_fmt_price(flight['lowestPrice'])}"):
+        if _alert(key, _msg_vuelta_standalone(flight), f"VUELTA SUELTA {flight['departure'][:10]} -> {_fmt_price(flight['lowestPrice'])}"):
             sent_vuelta += 1
 
     # Si no hubo ninguna alerta, manda heartbeat en cada run
