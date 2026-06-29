@@ -118,7 +118,7 @@ def process_all_flights(ida_flights: list[dict], vuelta_flights: list[dict], *_)
         if f.get("departure") and f.get("lowestPrice"):
             save_price(f"VUELTA:{f['departure']}", f["lowestPrice"])
 
-    # --- 1. COMBO: IDA + VUELTA compatible bajo $400k ---
+    # --- 1. COMBO: IDA + VUELTA compatible bajo $300k ---
     combos = []
     for ida in ida_flights:
         if not ida.get("lowestPrice"):
@@ -136,7 +136,7 @@ def process_all_flights(ida_flights: list[dict], vuelta_flights: list[dict], *_)
         if _alert(key, _msg_combo(ida, vuelta), f"COMBO {ida['departure'][:10]} + {vuelta['departure'][:10]} -> {_fmt_price(total)}"):
             sent_combo += 1
 
-    # --- 2. IDA SUELTA: BUE->RIO bajo $240k ---
+    # --- 2. IDA SUELTA: BUE->RIO bajo $320k ---
     qualifying_ida = sorted(
         [f for f in ida_flights if f.get("lowestPrice") and f["lowestPrice"] < IDA_STANDALONE_THRESHOLD],
         key=lambda x: x["lowestPrice"]
@@ -150,7 +150,7 @@ def process_all_flights(ida_flights: list[dict], vuelta_flights: list[dict], *_)
         if _alert(key, _msg_ida_standalone(flight, companion), f"IDA SUELTA {flight['departure'][:10]} -> {_fmt_price(flight['lowestPrice'])}"):
             sent_ida += 1
 
-    # --- 3. VUELTA SUELTA: RIO->BUE bajo $120k ---
+    # --- 3. VUELTA SUELTA: RIO->BUE bajo $92k ---
     qualifying_vuelta = sorted(
         [f for f in vuelta_flights if f.get("lowestPrice") and f["lowestPrice"] < VUELTA_STANDALONE_THRESHOLD],
         key=lambda x: x["lowestPrice"]
