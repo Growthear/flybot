@@ -26,7 +26,7 @@ if __name__ == "__main__":
     import time
 
     run_check()
-    schedule.every(6).hours.do(run_check)
+    schedule.every(2).hours.do(run_check)
     while True:
         schedule.run_pending()
         time.sleep(60)
